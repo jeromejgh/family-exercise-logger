@@ -1,0 +1,6 @@
+# Create requirements.txt with these contents:
+streamlit>=1.28.0
+pandas>=2.0.0
+plotly>=5.18.0
+numpy>=1.24.0
+streamlit-authenticator>=0.2.3
