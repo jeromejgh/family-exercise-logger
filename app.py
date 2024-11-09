@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import json
 import random
+import yaml
+import streamlit_authenticator as stauth
 from config import *
 from database import *
 from backup import ExerciseLogBackup
@@ -12,49 +14,31 @@ from backup import ExerciseLogBackup
 # Initialize database on first run
 init_db()
 
-def check_password():
-    """Returns `True` if the user had the correct password."""
+# Load authentication config
+with open('auth_config.yaml') as file:
+    config = yaml.load(file, Loader=yaml.SafeLoader)
 
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == "familyfit2024":  # Direct string comparison
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Clear password field
-        else:
-            st.session_state["password_correct"] = False
+# Create authenticator
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days']
+)
 
-    # First run or password not yet entered
-    if "password_correct" not in st.session_state:
-        st.title("Family Exercise Logger")
-        st.markdown("Please enter the password to access the application.")
-        
-        # Create password input field
-        st.text_input(
-            "Password", 
-            type="password", 
-            on_change=password_entered, 
-            key="password"
-        )
-        return False
-    
-    # Password already entered and correct
-    elif st.session_state["password_correct"]:
-        return True
-    
-    # Password entered but incorrect
-    else:
-        st.title("Family Exercise Logger")
-        st.markdown("Please enter the password to access the application.")
-        
-        # Create password input field with error message
-        st.text_input(
-            "Password", 
-            type="password", 
-            on_change=password_entered, 
-            key="password"
-        )
-        st.error("😕 Password incorrect")
-        return False
+# Add login widget
+name, authentication_status, username = authenticator.login('Login', 'main')
+
+if authentication_status == False:
+    st.error('Username/password is incorrect')
+    st.stop()
+elif authentication_status == None:
+    st.warning('Please enter your username and password')
+    st.stop()
+
+# If authenticated, continue with the app
+st.sidebar.title(f'Welcome {name}!')
+authenticator.logout('Logout', 'sidebar')
 
 def main():
     st.set_page_config(
